@@ -65,15 +65,15 @@ cd SmartCampusAPI
 ### Step 2. Open in NetBeans
 
 1. Open **NetBeans IDE**
-2. Click **File → Open Project**
+2. Click **File then Open Project**
 3. Navigate to the cloned `SmartCampusAPI` folder
 4. Click **Open Project**
 
 ### Step 3. Verify Tomcat is Configured
 
-1. In NetBeans go to **Tools → Servers**
+1. In NetBeans go to **Tools then Servers**
 2. Confirm **Apache Tomcat 9** is listed
-3. If not, click **Add Server → Apache Tomcat** and point it to your Tomcat installation folder
+3. If not, click **Add Server then Apache Tomcat** and point it to your Tomcat installation folder
 
 ### Step 4. Build the Project
 
