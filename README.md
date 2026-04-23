@@ -149,3 +149,55 @@ curl -X POST http://localhost:8080/SmartCampusAPI/api/v1/sensors \
 
 ## Coursework Questions and Answers
 
+Part 1 - Setup & Discovery
+
+Question 1.1.1 - JAX-RS Resource Lifecycle.
+
+JAX-RS will automatically generate a new instance of a resource class with each request. This implies that instance variables are re-created each request and can not contain shared data. This is the reason we have static HashMaps in DataStore - static fields are part of the class, not of the instance, hence the data is retained between all requests. In its absence, all data that is stored would be lost every time it is called.
+
+Question 1.2 - Why HATEOAS is important.
+
+HATEOAS implies that the API response contains the links to the related resources so that the clients will be able to navigate without coding out the URLs. As an example our discovery endpoint directs links to/api/v1/rooms and/api/v1/sensors. In case of a change of URLs, clients will not stop since they use the links in the response instead of using the old documentation.
+
+Part 2 - Room Management
+
+Question 2.1 - IDs Only vs Full Objects.
+
+Returning just IDs maintains small responses, but requires the client to make additional requests to obtain information - 100 rooms would require 101 requests. Sending whole objects is more expensive in bandwidth, but provides all the information in a single request, much more feasible. We do not send back partial objects because we have simple and lightweight data.
+
+Question 2.2 - DELETE idempotency?
+
+Yes. The initial DELETE deletes the room and sends 200 OK. Any subsequent request with the same request will result in 404 Not Found since the room has been lost. The server state is the same between consecutive calls - the room is not present - that meets idempotency. The code of response varies but the result remains the same.
+
+Part 3 - Sensor Operations
+
+Question 3.1 @Consumes mismatch
+
+When a client makes a text/plain or application/xml request to an endpoint annotated with @Consumes(APPLICATION_JSON), JAX-RS will automatically reject that request with 415 Unsupported Media Type, without it even reaching the resource method. The resource approach is never implemented.
+
+Question 3.2 - @QueryParam vs. path-based filtering.
+
+type=CO2 is right since it is an optional modifier on a collection, and not a resource identifier. Incidentally, putting it in the path such as /sensors/type/CO2 suggests that it is a different resource. Multi filters scale well, too - querying with query parameters such as type=CO2 and status=ACTIVE is understandable, but querying with /sensors/type/CO2/status/ACTIVE is not.
+
+
+Part 4 - Sub-Resources
+
+Question 41 1- Sub-Resource Locator advantages.
+
+Rather than describe all the nested paths in a single huge class, the locator pattern uses specialized classes to describe the nested paths. SensorResource forwards /sensors/{id}/readings to SensorReadingResource. This keeps the classes small and narrow, simplifies the maintenance of the code and reflects the hierarchy of the data in the real world directly within the code structure.
+
+Part 5 - Handling of errors and logging.
+
+Question 5.1 — 422 vs 404
+
+404 is the non-existence of the URL. However, with a sensor that has a bogus roomId, the URL works, and the JSON is fine but the issue is a bad value within the payload. 422 Unprocessable Entity is an appropriate error and it is an error that the request was received and the content is not semantically valid, which was the case.
+
+Question 5.2 - Stack trace security risks.
+
+Stack traces display internal package names, version of a library, file paths and logic flow. This is used by attackers to locate known vulnerabilities in certain versions of libraries. Our GlobalExceptionMapper simply catches all exceptions and sends a generic 500 message, providing no useful information to the attackers.
+
+Question 5.3 - Filters vs manual logging.
+
+The on-method duplication of Logger.info() would be 20+ endpoints with duplicated logging code. When the format is modified, all the methods must be updated. An automatic ContainerRequestFilter and ContainerResponseFilter intercepts all requests and responses with zero logging code in resource methods, so it remains clean and only business logic
+
+
