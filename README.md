@@ -7,12 +7,9 @@ A RESTful API for managing Rooms and Sensors across a Smart Campus, built using 
 ## Table of Contents
 
 - [API Overview](#api-overview)
-- [Project Structure](#project-structure)
 - [Technology Stack](#technology-stack)
 - [How to Build and Run](#how-to-build-and-run)
-- [API Endpoints](#api-endpoints)
 - [Sample curl Commands](#sample-curl-commands)
-- [Error Handling](#error-handling)
 
 ---
 
@@ -104,31 +101,6 @@ You should see a JSON response with API metadata.
 
 ---
 
-## API Endpoints
-
-### Base URL
-```
-http://localhost:8080/SmartCampusAPI/api/v1
-```
-
-| # | Method | Endpoint | Purpose | Status |
-|---|--------|----------|---------|--------|
-| 1 | `GET` | `/api/v1/` | API discovery | `200` |
-| 2 | `GET` | `/api/v1/rooms` | List all rooms | `200` |
-| 3 | `POST` | `/api/v1/rooms` | Create room | `201` |
-| 4 | `GET` | `/api/v1/rooms/{roomId}` | Get room | `200` |
-| 5 | `DELETE` | `/api/v1/rooms/{roomId}` | Delete room (has sensors) | `409` |
-| 6 | `DELETE` | `/api/v1/rooms/{roomId}` | Delete empty room | `200` |
-| 7 | `GET` | `/api/v1/sensors` | List all sensors | `200` |
-| 8 | `GET` | `/api/v1/sensors?type=CO2` | Filter by type | `200` |
-| 9 | `POST` | `/api/v1/sensors` | Create sensor | `201` |
-| 10 | `POST` | `/api/v1/sensors` | Invalid roomId | `422` |
-| 11 | `GET` | `/api/v1/sensors/{sensorId}` | Get sensor | `200` |
-| 12 | `GET` | `/api/v1/sensors/{sensorId}/readings` | List readings | `200` |
-| 13 | `POST` | `/api/v1/sensors/{sensorId}/readings` | Add reading | `201` |
-| 14 | `POST` | `/api/v1/sensors/{sensorId}/readings` | Maintenance sensor | `403` |
-| 15 | `GET` | `/api/v1/rooms/FAKE-999` | Room not found | `404` |
----
 
 ## Sample curl Commands
 
