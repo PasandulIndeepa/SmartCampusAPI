@@ -8,8 +8,9 @@ A RESTful API for managing Rooms and Sensors across a Smart Campus, built using 
 
 - [API Overview](#api-overview)
 - [Technology Stack](#technology-stack)
-- [How to Build and Run](#how-to-build-and-run)
+  [How to Build and Run](#how-to-build-and-run)
 - [Sample curl Commands](#sample-curl-commands)
+- [Coursework Questions and Answers]()
 
 ---
 
