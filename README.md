@@ -141,7 +141,6 @@ You should see a JSON response with API metadata.
 http://localhost:8080/SmartCampusAPI/api/v1
 ```
 
-## API Endpoints
 
 | # | Method | Endpoint | Purpose | Status |
 |---|--------|----------|---------|--------|
