@@ -88,41 +88,41 @@ SmartCampusAPI/
 - NetBeans IDE (with Maven support)
 - Internet connection (for Maven to download dependencies on first build)
 
-### Step 1 — Clone the Repository
+### Step 1. Clone the Repository
 
 ```bash
 git clone https://github.com/PasandulIndeepa/SmartCampusAPI.git
 cd SmartCampusAPI
 ```
 
-### Step 2 — Open in NetBeans
+### Step 2. Open in NetBeans
 
 1. Open **NetBeans IDE**
 2. Click **File → Open Project**
 3. Navigate to the cloned `SmartCampusAPI` folder
 4. Click **Open Project**
 
-### Step 3 — Verify Tomcat is Configured
+### Step 3. Verify Tomcat is Configured
 
 1. In NetBeans go to **Tools → Servers**
 2. Confirm **Apache Tomcat 9** is listed
 3. If not, click **Add Server → Apache Tomcat** and point it to your Tomcat installation folder
 
-### Step 4 — Build the Project
+### Step 4. Build the Project
 
 1. Right click the project in the **Projects** panel
 2. Click **Clean and Build**
 3. Wait for Maven to download dependencies
 4. Confirm you see **BUILD SUCCESS** in the output panel
 
-### Step 5 — Run the Project
+### Step 5. Run the Project
 
 1. Right click the project
 2. Click **Run**
 3. NetBeans will deploy the WAR to Tomcat automatically
 4. Tomcat starts on port **8080**
 
-### Step 6 — Verify it's Running
+### Step 6. Verify it's Running
 
 Open your browser and go to:
 
