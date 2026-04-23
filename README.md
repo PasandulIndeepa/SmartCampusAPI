@@ -20,9 +20,9 @@ A RESTful API for managing Rooms and Sensors across a Smart Campus, built using 
 
 The Smart Campus API provides a backend service for campus facilities managers to monitor and manage:
 
-- **Rooms** — Physical spaces on campus (labs, libraries, halls)
-- **Sensors** — Hardware devices deployed inside rooms (temperature, CO2, occupancy)
-- **Sensor Readings** — Historical measurement logs recorded by each sensor
+- **Rooms** - Physical spaces on campus (labs, libraries, halls)
+- **Sensors** - Hardware devices deployed inside rooms (temperature, CO2, occupancy)
+- **Sensor Readings** - Historical measurement logs recorded by each sensor
 
 The API follows REST principles with a versioned base path at `/api/v1`. All responses are in JSON format. The data is stored entirely in-memory using `HashMap` and `ArrayList` — no database is required.
 
