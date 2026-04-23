@@ -159,9 +159,3 @@ curl -X POST http://localhost:8080/SmartCampusAPI/api/v1/sensors \
 
 ---
 
-
-
-**Sensors:**
-- `TEMP-001` — Temperature sensor, ACTIVE, in LIB-301
-- `CO2-001` — CO2 sensor, ACTIVE, in LAB-101
-- `HUM-001` — Humidity sensor, MAINTENANCE, in LIB-301
