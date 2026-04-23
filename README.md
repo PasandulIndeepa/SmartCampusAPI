@@ -101,7 +101,7 @@ All exceptions are handled globally via `GlobalExceptionMapper` and return a JSO
 
 ---
 
-## 🛠️ Prerequisites
+##  Prerequisites
 
 Ensure the following are installed before proceeding:
 
