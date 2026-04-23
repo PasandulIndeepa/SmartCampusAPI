@@ -1,125 +1,92 @@
 # SmartCampusAPI
 
-A RESTful API for managing campus rooms and IoT environmental sensors, built with **Java 11**, **JAX-RS (Jersey 2.32)**, and deployable on **Apache Tomcat**.
+A RESTful API for managing Rooms and Sensors across a Smart Campus, built using **JAX-RS (Jersey 2.32)** on **Apache Tomcat 9**.
 
 ---
 
-## API Design Overview
+## Table of Contents
 
-### Architecture
-
-The API follows a classic **three-layer JAX-RS architecture**:
-
-```
-Client Request
-      │
-      ▼
- Resource Layer          ← JAX-RS annotated classes (@Path, @GET, @POST, …)
-      │
-      ▼
- DAO / DataStore Layer   ← Singleton in-memory HashMap (thread-shared state)
-      │
-      ▼
- Model Layer             ← Plain Java Objects: Room, Sensor, SensorReading
-```
-
-- **Framework:** Jersey 2.32 (JAX-RS reference implementation)  
-- **Transport:** JSON via Jackson (`jersey-media-json-jackson`)  
-- **Base path:** `/api/v1` (configured via `@ApplicationPath` and `web.xml`)  
-- **Storage:** In-memory `HashMap` within a static `DataStore` class (data is pre-seeded on startup; state is reset on server restart)
-
-### Resource Hierarchy
-
-```
-/api/v1/
-├── /rooms
-│   ├── GET    – List all rooms
-│   ├── POST   – Create a new room
-│   └── /{roomId}
-│       ├── GET    – Get a specific room
-│       └── DELETE – Delete a room (fails if sensors are still assigned)
-│
-├── /sensors
-│   ├── GET    – List all sensors (supports ?type= query filter)
-│   ├── POST   – Create a new sensor (validates that the parent room exists)
-│   └── /{sensorId}
-│       ├── GET – Get a specific sensor
-│       └── /readings
-│           ├── GET  – List all readings for a sensor
-│           └── POST – Submit a new reading (blocked if sensor is MAINTENANCE)
-│
-└── /          – Discovery endpoint (API version + resource links)
-```
-
-### Data Models
-
-#### Room
-| Field       | Type           | Description                          |
-|-------------|----------------|--------------------------------------|
-| `id`        | `String`       | Unique room identifier (e.g. `LIB-301`) |
-| `name`      | `String`       | Human-readable room name             |
-| `capacity`  | `int`          | Maximum occupancy                    |
-| `sensorIds` | `List<String>` | IDs of sensors assigned to this room |
-
-#### Sensor
-| Field          | Type     | Description                                     |
-|----------------|----------|-------------------------------------------------|
-| `id`           | `String` | Unique sensor identifier (e.g. `TEMP-001`)      |
-| `type`         | `String` | Sensor category (e.g. `Temperature`, `CO2`, `Humidity`) |
-| `status`       | `String` | `ACTIVE` or `MAINTENANCE`                       |
-| `currentValue` | `double` | Most recently recorded value                    |
-| `roomId`       | `String` | Parent room this sensor belongs to              |
-
-#### SensorReading
-| Field       | Type     | Description                              |
-|-------------|----------|------------------------------------------|
-| `id`        | `String` | Auto-generated UUID                      |
-| `timestamp` | `long`   | Unix epoch milliseconds (auto-set)       |
-| `value`     | `double` | The measured sensor value                |
-
-### Business Rules & Custom Exceptions
-
-| Rule | HTTP Status | Exception |
-|------|-------------|-----------|
-| A room cannot be deleted if it still has sensors assigned | `409 Conflict` | `RoomNotEmptyException` |
-| A sensor cannot be created with a non-existent `roomId` | `422 Unprocessable Entity` | `LinkedResourceNotFoundException` |
-| A reading cannot be submitted to a sensor in `MAINTENANCE` status | `403 Forbidden` | `SensorUnavailableException` |
-| Duplicate IDs on POST | `409 Conflict` | Inline response |
-| Resource not found | `404 Not Found` | Inline response |
-
-All exceptions are handled globally via `GlobalExceptionMapper` and return a JSON `ErrorMessage` body.
-
-### Pre-Seeded Data (Available Immediately on Startup)
-
-| Type    | ID         | Details |
-|---------|------------|---------|
-| Room    | `LIB-301`  | Library Quiet Study, capacity 50 |
-| Room    | `LAB-101`  | Computer Lab, capacity 30 |
-| Sensor  | `TEMP-001` | Temperature, ACTIVE, 22.5, in LIB-301 |
-| Sensor  | `CO2-001`  | CO2, ACTIVE, 400.0, in LAB-101 |
-| Sensor  | `HUM-001`  | Humidity, MAINTENANCE, 60.0, in LIB-301 |
+- [API Overview](#api-overview)
+- [Project Structure](#project-structure)
+- [Technology Stack](#technology-stack)
+- [How to Build and Run](#how-to-build-and-run)
+- [API Endpoints](#api-endpoints)
+- [Sample curl Commands](#sample-curl-commands)
+- [Error Handling](#error-handling)
 
 ---
 
-##  Prerequisites
+## API Overview
 
-Ensure the following are installed before proceeding:
+The Smart Campus API provides a backend service for campus facilities managers to monitor and manage:
 
-| Tool | Version | Download |
-|------|---------|---------|
-| JDK  | 11 or higher | https://adoptium.net |
-| Apache Maven | 3.6+ | https://maven.apache.org/download.cgi |
-| Apache Tomcat | 9.x | https://tomcat.apache.org/download-90.cgi |
+- **Rooms** — Physical spaces on campus (labs, libraries, halls)
+- **Sensors** — Hardware devices deployed inside rooms (temperature, CO2, occupancy)
+- **Sensor Readings** — Historical measurement logs recorded by each sensor
 
-Verify your installations:
-```bash
-java -version
-mvn -version
+The API follows REST principles with a versioned base path at `/api/v1`. All responses are in JSON format. The data is stored entirely in-memory using `HashMap` and `ArrayList` — no database is required.
+
+### Key Design Decisions
+
+- **Resource Hierarchy:** Sensor readings are modelled as sub-resources of sensors (`/sensors/{id}/readings`), reflecting the physical relationship between sensors and their data.
+- **HATEOAS:** The discovery endpoint at `GET /api/v1/` returns links to all primary resource collections, allowing clients to navigate the API without hardcoding URLs.
+- **Error Handling:** All errors return structured JSON bodies with an error message, HTTP status code, and a documentation link. Raw stack traces are never exposed.
+- **Logging:** Every request and response is logged via a JAX-RS filter without any logging code inside resource methods.
+
+---
+
+## Project Structure
+
+```
+SmartCampusAPI/
+└── src/main/java/com/smartcampus/
+    ├── MyApplication.java                          # JAX-RS entry point (@ApplicationPath)
+    ├── dao/
+    │   └── DataStore.java                          # In-memory HashMap storage
+    ├── model/
+    │   ├── Room.java
+    │   ├── Sensor.java
+    │   ├── SensorReading.java
+    │   └── ErrorMessage.java
+    ├── resource/
+    │   ├── DiscoveryResource.java                  # GET /api/v1/
+    │   ├── RoomResource.java                       # /api/v1/rooms
+    │   ├── SensorResource.java                     # /api/v1/sensors
+    │   └── SensorReadingResource.java              # /api/v1/sensors/{id}/readings
+    ├── exception/
+    │   ├── RoomNotEmptyException.java
+    │   ├── RoomNotEmptyExceptionMapper.java        # 409 Conflict
+    │   ├── LinkedResourceNotFoundException.java
+    │   ├── LinkedResourceNotFoundExceptionMapper.java  # 422 Unprocessable Entity
+    │   ├── SensorUnavailableException.java
+    │   ├── SensorUnavailableExceptionMapper.java   # 403 Forbidden
+    │   └── GlobalExceptionMapper.java              # 500 Internal Server Error
+    └── filter/
+        └── LoggingFilter.java                      # Logs all requests and responses
 ```
 
 ---
 
-##  Build & Launch Instructions
+## Technology Stack
+
+| Technology | Version |
+|------------|---------|
+| Java | 11 |
+| JAX-RS (Jersey) | 2.32 |
+| Apache Tomcat | 9 |
+| Jackson (JSON) | via jersey-media-json-jackson |
+| Build Tool | Maven |
+
+---
+
+## How to Build and Run
+
+### Prerequisites
+
+- JDK 11 or higher installed
+- Apache Tomcat 9 installed and configured in NetBeans
+- NetBeans IDE (with Maven support)
+- Internet connection (for Maven to download dependencies on first build)
 
 ### Step 1 — Clone the Repository
 
@@ -128,323 +95,172 @@ git clone https://github.com/PasandulIndeepa/SmartCampusAPI.git
 cd SmartCampusAPI
 ```
 
-### Step 2 — Build the WAR file with Maven
+### Step 2 — Open in NetBeans
 
-```bash
-mvn clean package
-```
+1. Open **NetBeans IDE**
+2. Click **File → Open Project**
+3. Navigate to the cloned `SmartCampusAPI` folder
+4. Click **Open Project**
 
-This compiles all source files and produces the deployable archive at:
-```
-target/SmartCampusAPI-1.0-SNAPSHOT.war
-```
+### Step 3 — Verify Tomcat is Configured
 
-### Step 3 — Deploy to Apache Tomcat
+1. In NetBeans go to **Tools → Servers**
+2. Confirm **Apache Tomcat 9** is listed
+3. If not, click **Add Server → Apache Tomcat** and point it to your Tomcat installation folder
 
-Copy the generated WAR file into Tomcat's `webapps` directory:
+### Step 4 — Build the Project
 
-**On Windows:**
-```cmd
-copy target\SmartCampusAPI-1.0-SNAPSHOT.war C:\apache-tomcat-9.x.x\webapps\SmartCampusAPI.war
-```
+1. Right click the project in the **Projects** panel
+2. Click **Clean and Build**
+3. Wait for Maven to download dependencies
+4. Confirm you see **BUILD SUCCESS** in the output panel
 
-**On macOS / Linux:**
-```bash
-cp target/SmartCampusAPI-1.0-SNAPSHOT.war /opt/tomcat/webapps/SmartCampusAPI.war
-```
+### Step 5 — Run the Project
 
-### Step 4 — Start the Tomcat Server
+1. Right click the project
+2. Click **Run**
+3. NetBeans will deploy the WAR to Tomcat automatically
+4. Tomcat starts on port **8080**
 
-**On Windows:**
-```cmd
-C:\apache-tomcat-9.x.x\bin\startup.bat
-```
+### Step 6 — Verify it's Running
 
-**On macOS / Linux:**
-```bash
-/opt/tomcat/bin/startup.sh
-```
+Open your browser and go to:
 
-### Step 5 — Verify the Server is Running
-
-Open your browser and navigate to:
 ```
 http://localhost:8080/SmartCampusAPI/api/v1/
 ```
 
-You should receive a JSON response like:
-```json
-{
-  "name": "Smart Campus API",
-  "version": "1.0",
-  "description": "Sensor and Room Management API",
-  "resources": {
-    "rooms": "/api/v1/rooms",
-    "sensors": "/api/v1/sensors"
-  }
-}
-```
-
-### (Optional) Alternative — Deploy via Tomcat Manager
-
-1. Open `http://localhost:8080/manager/html` in your browser.
-2. Log in with your Tomcat manager credentials.
-3. Scroll to the **"WAR file to deploy"** section.
-4. Browse to `target/SmartCampusAPI-1.0-SNAPSHOT.war` and click **Deploy**.
-
-### Stopping the Server
-
-**On Windows:**
-```cmd
-C:\apache-tomcat-9.x.x\bin\shutdown.bat
-```
-
-**On macOS / Linux:**
-```bash
-/opt/tomcat/bin/shutdown.sh
-```
+You should see a JSON response with API metadata.
 
 ---
 
-##  Base URL
+## API Endpoints
 
-All endpoints are relative to:
+### Base URL
 ```
 http://localhost:8080/SmartCampusAPI/api/v1
 ```
 
+### Discovery
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Returns API metadata and resource links |
+
+### Rooms
+
+| Method | Endpoint | Description | Status |
+|--------|----------|-------------|--------|
+| GET | `/rooms` | Get all rooms | 200 |
+| POST | `/rooms` | Create a new room | 201 |
+| GET | `/rooms/{roomId}` | Get a specific room | 200 / 404 |
+| DELETE | `/rooms/{roomId}` | Delete a room (fails if sensors exist) | 200 / 409 |
+
+### Sensors
+
+| Method | Endpoint | Description | Status |
+|--------|----------|-------------|--------|
+| GET | `/sensors` | Get all sensors | 200 |
+| GET | `/sensors?type={type}` | Filter sensors by type | 200 |
+| POST | `/sensors` | Register a new sensor | 201 / 422 |
+| GET | `/sensors/{sensorId}` | Get a specific sensor | 200 / 404 |
+
+### Sensor Readings
+
+| Method | Endpoint | Description | Status |
+|--------|----------|-------------|--------|
+| GET | `/sensors/{sensorId}/readings` | Get all readings for a sensor | 200 / 404 |
+| POST | `/sensors/{sensorId}/readings` | Add a new reading | 201 / 403 / 404 |
+
 ---
 
-##  Sample cURL Commands
+## Sample curl Commands
 
-> **Note:** The server pre-seeds sample data (`LIB-301`, `TEMP-001`, etc.) on startup, so these commands work immediately without any prior setup.
-
----
-
-### 1. Get All Rooms
-
-Retrieve the full list of campus rooms currently stored in the system.
-
+### 1. Get API Discovery Info
 ```bash
-curl -X GET http://localhost:8080/SmartCampusAPI/api/v1/rooms \
-     -H "Accept: application/json"
+curl -X GET http://localhost:8080/SmartCampusAPI/api/v1/
 ```
 
-**Expected Response (`200 OK`):**
-```json
-[
-  {
-    "id": "LIB-301",
-    "name": "Library Quiet Study",
-    "capacity": 50,
-    "sensorIds": ["TEMP-001", "HUM-001"]
-  },
-  {
-    "id": "LAB-101",
-    "name": "Computer Lab",
-    "capacity": 30,
-    "sensorIds": ["CO2-001"]
-  }
-]
+### 2. Get All Rooms
+```bash
+curl -X GET http://localhost:8080/SmartCampusAPI/api/v1/rooms
 ```
 
----
-
-### 2. Create a New Room
-
-Register a new campus room with a unique ID, name, and seating capacity.
-
+### 3. Create a New Room
 ```bash
 curl -X POST http://localhost:8080/SmartCampusAPI/api/v1/rooms \
-     -H "Content-Type: application/json" \
-     -H "Accept: application/json" \
-     -d '{
-           "id": "HALL-202",
-           "name": "Lecture Hall B",
-           "capacity": 120
-         }'
+  -H "Content-Type: application/json" \
+  -d "{\"id\": \"HALL-101\", \"name\": \"Main Hall\", \"capacity\": 100}"
 ```
 
-**Expected Response (`201 Created`):**
-```json
-{
-  "id": "HALL-202",
-  "name": "Lecture Hall B",
-  "capacity": 120,
-  "sensorIds": []
-}
+### 4. Get All Sensors Filtered by Type
+```bash
+curl -X GET "http://localhost:8080/SmartCampusAPI/api/v1/sensors?type=CO2"
 ```
 
----
-
-### 3. Create a New Sensor (linked to an existing room)
-
-Register a new temperature sensor and assign it to a room. The `roomId` must refer to an existing room; otherwise, the API returns `422 Unprocessable Entity`.
-
+### 5. Register a New Sensor
 ```bash
 curl -X POST http://localhost:8080/SmartCampusAPI/api/v1/sensors \
-     -H "Content-Type: application/json" \
-     -H "Accept: application/json" \
-     -d '{
-           "id": "TEMP-002",
-           "type": "Temperature",
-           "status": "ACTIVE",
-           "currentValue": 21.0,
-           "roomId": "HALL-202"
-         }'
+  -H "Content-Type: application/json" \
+  -d "{\"id\": \"TEMP-002\", \"type\": \"Temperature\", \"status\": \"ACTIVE\", \"currentValue\": 21.0, \"roomId\": \"LAB-101\"}"
 ```
 
-**Expected Response (`201 Created`):**
-```json
-{
-  "id": "TEMP-002",
-  "type": "Temperature",
-  "status": "ACTIVE",
-  "currentValue": 21.0,
-  "roomId": "HALL-202"
-}
-```
-
----
-
-### 4. Filter Sensors by Type
-
-Retrieve only sensors of a specific type using the `?type=` query parameter.
-
-```bash
-curl -X GET "http://localhost:8080/SmartCampusAPI/api/v1/sensors?type=Temperature" \
-     -H "Accept: application/json"
-```
-
-**Expected Response (`200 OK`):**
-```json
-[
-  {
-    "id": "TEMP-001",
-    "type": "Temperature",
-    "status": "ACTIVE",
-    "currentValue": 22.5,
-    "roomId": "LIB-301"
-  }
-]
-```
-
----
-
-### 5. Submit a Sensor Reading
-
-Post a new environmental reading for an active sensor. The sensor's `currentValue` is automatically updated, and the new reading is stored in the sensor's history.
-
+### 6. Add a Sensor Reading
 ```bash
 curl -X POST http://localhost:8080/SmartCampusAPI/api/v1/sensors/TEMP-001/readings \
-     -H "Content-Type: application/json" \
-     -H "Accept: application/json" \
-     -d '{
-           "value": 24.3
-         }'
+  -H "Content-Type: application/json" \
+  -d "{\"id\": \"READ-001\", \"value\": 25.5, \"timestamp\": 1714000000000}"
 ```
 
-**Expected Response (`201 Created`):**
+### 7. Get All Readings for a Sensor
+```bash
+curl -X GET http://localhost:8080/SmartCampusAPI/api/v1/sensors/TEMP-001/readings
+```
+
+### 8. Attempt to Delete a Room with Sensors (409 Error)
+```bash
+curl -X DELETE http://localhost:8080/SmartCampusAPI/api/v1/rooms/LIB-301
+```
+
+### 9. Attempt to Create Sensor with Invalid Room (422 Error)
+```bash
+curl -X POST http://localhost:8080/SmartCampusAPI/api/v1/sensors \
+  -H "Content-Type: application/json" \
+  -d "{\"id\": \"TEMP-999\", \"type\": \"Temperature\", \"status\": \"ACTIVE\", \"currentValue\": 20.0, \"roomId\": \"FAKE-ROOM\"}"
+```
+
+---
+
+## Error Handling
+
+All errors return a structured JSON body:
+
 ```json
 {
-  "id": "a3f7b2c1-...",
-  "timestamp": 1714000000000,
-  "value": 24.3
+    "errorMessage": "Description of what went wrong",
+    "errorCode": 409,
+    "documentation": "https://smartcampus.ac.uk/api/docs/errors"
 }
 ```
 
----
-
-### 6. Get All Readings for a Sensor
-
-Retrieve the full reading history for a specific sensor.
-
-```bash
-curl -X GET http://localhost:8080/SmartCampusAPI/api/v1/sensors/TEMP-001/readings \
-     -H "Accept: application/json"
-```
-
-**Expected Response (`200 OK`):**
-```json
-[
-  {
-    "id": "...",
-    "timestamp": 1714000000000,
-    "value": 22.5
-  },
-  {
-    "id": "...",
-    "timestamp": 1714000020000,
-    "value": 24.3
-  }
-]
-```
+| Scenario | Exception | HTTP Status |
+|----------|-----------|-------------|
+| Delete room that has sensors | `RoomNotEmptyException` | 409 Conflict |
+| Sensor references non-existent room | `LinkedResourceNotFoundException` | 422 Unprocessable Entity |
+| POST reading to MAINTENANCE sensor | `SensorUnavailableException` | 403 Forbidden |
+| Any unexpected runtime error | `GlobalExceptionMapper` | 500 Internal Server Error |
 
 ---
 
-### 7. Attempt to Read from a MAINTENANCE Sensor (Error Demonstration)
+## Pre-loaded Sample Data
 
-Demonstrates the `403 Forbidden` guard — sensor `HUM-001` starts in `MAINTENANCE` status and cannot accept new readings.
+The API starts with the following data in memory:
 
-```bash
-curl -X POST http://localhost:8080/SmartCampusAPI/api/v1/sensors/HUM-001/readings \
-     -H "Content-Type: application/json" \
-     -H "Accept: application/json" \
-     -d '{"value": 55.0}'
-```
+**Rooms:**
+- `LIB-301` — Library Quiet Study (capacity: 50)
+- `LAB-101` — Computer Lab (capacity: 30)
 
-**Expected Response (`403 Forbidden`):**
-```json
-{
-  "status": 403,
-  "message": "Sensor HUM-001 is under MAINTENANCE and cannot accept new readings!"
-}
-```
-
----
-
-##  Project Structure
-
-```
-SmartCampusAPI/
-├── pom.xml                          # Maven build configuration
-└── src/
-    └── main/
-        ├── java/com/smartcampus/
-        │   ├── MyApplication.java                  # JAX-RS entry point (@ApplicationPath)
-        │   ├── dao/
-        │   │   └── DataStore.java                  # In-memory singleton data store
-        │   ├── model/
-        │   │   ├── Room.java
-        │   │   ├── Sensor.java
-        │   │   ├── SensorReading.java
-        │   │   └── ErrorMessage.java
-        │   ├── resource/
-        │   │   ├── DiscoveryResource.java           # GET /api/v1/
-        │   │   ├── RoomResource.java                # /api/v1/rooms
-        │   │   ├── SensorResource.java              # /api/v1/sensors
-        │   │   └── SensorReadingResource.java       # /api/v1/sensors/{id}/readings
-        │   ├── exception/
-        │   │   ├── GlobalExceptionMapper.java
-        │   │   ├── LinkedResourceNotFoundException.java
-        │   │   ├── RoomNotEmptyException.java
-        │   │   └── SensorUnavailableException.java
-        │   └── filter/
-        │       └── LoggingFilter.java
-        └── webapp/
-            └── WEB-INF/
-                └── web.xml                         # Servlet & URL mapping config
-```
-
----
-
-##  Technology Stack
-
-| Component       | Technology                  |
-|-----------------|-----------------------------|
-| Language        | Java 11                     |
-| REST Framework  | JAX-RS via Jersey 2.32      |
-| JSON Binding    | Jackson (via Jersey)        |
-| Build Tool      | Apache Maven 3.x            |
-| Server          | Apache Tomcat 9.x           |
-| Data Storage    | In-memory HashMap (no DB)   |
+**Sensors:**
+- `TEMP-001` — Temperature sensor, ACTIVE, in LIB-301
+- `CO2-001` — CO2 sensor, ACTIVE, in LAB-101
+- `HUM-001` — Humidity sensor, MAINTENANCE, in LIB-301
