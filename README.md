@@ -1,10 +1,10 @@
-# 🏫 SmartCampusAPI
+# SmartCampusAPI
 
 A RESTful API for managing campus rooms and IoT environmental sensors, built with **Java 11**, **JAX-RS (Jersey 2.32)**, and deployable on **Apache Tomcat**.
 
 ---
 
-## 📐 API Design Overview
+## API Design Overview
 
 ### Architecture
 
@@ -119,7 +119,7 @@ mvn -version
 
 ---
 
-## 🚀 Build & Launch Instructions
+##  Build & Launch Instructions
 
 ### Step 1 — Clone the Repository
 
@@ -206,7 +206,7 @@ C:\apache-tomcat-9.x.x\bin\shutdown.bat
 
 ---
 
-## 🌐 Base URL
+##  Base URL
 
 All endpoints are relative to:
 ```
@@ -215,7 +215,7 @@ http://localhost:8080/SmartCampusAPI/api/v1
 
 ---
 
-## 📡 Sample cURL Commands
+##  Sample cURL Commands
 
 > **Note:** The server pre-seeds sample data (`LIB-301`, `TEMP-001`, etc.) on startup, so these commands work immediately without any prior setup.
 
@@ -403,7 +403,7 @@ curl -X POST http://localhost:8080/SmartCampusAPI/api/v1/sensors/HUM-001/reading
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 SmartCampusAPI/
@@ -438,7 +438,7 @@ SmartCampusAPI/
 
 ---
 
-## ⚙️ Technology Stack
+##  Technology Stack
 
 | Component       | Technology                  |
 |-----------------|-----------------------------|
