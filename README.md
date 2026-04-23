@@ -35,36 +35,6 @@ The API follows REST principles with a versioned base path at `/api/v1`. All res
 
 ---
 
-## Project Structure
-
-```
-SmartCampusAPI/
-└── src/main/java/com/smartcampus/
-    ├── MyApplication.java                          # JAX-RS entry point (@ApplicationPath)
-    ├── dao/
-    │   └── DataStore.java                          # In-memory HashMap storage
-    ├── model/
-    │   ├── Room.java
-    │   ├── Sensor.java
-    │   ├── SensorReading.java
-    │   └── ErrorMessage.java
-    ├── resource/
-    │   ├── DiscoveryResource.java                  # GET /api/v1/
-    │   ├── RoomResource.java                       # /api/v1/rooms
-    │   ├── SensorResource.java                     # /api/v1/sensors
-    │   └── SensorReadingResource.java              # /api/v1/sensors/{id}/readings
-    ├── exception/
-    │   ├── RoomNotEmptyException.java
-    │   ├── RoomNotEmptyExceptionMapper.java        # 409 Conflict
-    │   ├── LinkedResourceNotFoundException.java
-    │   ├── LinkedResourceNotFoundExceptionMapper.java  # 422 Unprocessable Entity
-    │   ├── SensorUnavailableException.java
-    │   ├── SensorUnavailableExceptionMapper.java   # 403 Forbidden
-    │   └── GlobalExceptionMapper.java              # 500 Internal Server Error
-    └── filter/
-        └── LoggingFilter.java                      # Logs all requests and responses
-```
-
 ---
 
 ## Technology Stack
@@ -140,7 +110,6 @@ You should see a JSON response with API metadata.
 ```
 http://localhost:8080/SmartCampusAPI/api/v1
 ```
-
 
 | # | Method | Endpoint | Purpose | Status |
 |---|--------|----------|---------|--------|
@@ -218,34 +187,7 @@ curl -X POST http://localhost:8080/SmartCampusAPI/api/v1/sensors \
 
 ---
 
-## Error Handling
 
-All errors return a structured JSON body:
-
-```json
-{
-    "errorMessage": "Description of what went wrong",
-    "errorCode": 409,
-    "documentation": "https://smartcampus.ac.uk/api/docs/errors"
-}
-```
-
-| Scenario | Exception | HTTP Status |
-|----------|-----------|-------------|
-| Delete room that has sensors | `RoomNotEmptyException` | 409 Conflict |
-| Sensor references non-existent room | `LinkedResourceNotFoundException` | 422 Unprocessable Entity |
-| POST reading to MAINTENANCE sensor | `SensorUnavailableException` | 403 Forbidden |
-| Any unexpected runtime error | `GlobalExceptionMapper` | 500 Internal Server Error |
-
----
-
-## Pre-loaded Sample Data
-
-The API starts with the following data in memory:
-
-**Rooms:**
-- `LIB-301` — Library Quiet Study (capacity: 50)
-- `LAB-101` — Computer Lab (capacity: 30)
 
 **Sensors:**
 - `TEMP-001` — Temperature sensor, ACTIVE, in LIB-301
