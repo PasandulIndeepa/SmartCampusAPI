@@ -157,6 +157,7 @@ curl -X POST http://localhost:8080/SmartCampusAPI/api/v1/sensors \
   -H "Content-Type: application/json" \
   -d "{\"id\": \"TEMP-999\", \"type\": \"Temperature\", \"status\": \"ACTIVE\", \"currentValue\": 20.0, \"roomId\": \"FAKE-ROOM\"}"
 ```
-
 ---
+
+## Coursework Questions and Answers
 
