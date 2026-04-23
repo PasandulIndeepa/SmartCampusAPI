@@ -7,8 +7,7 @@ A RESTful API for managing Rooms and Sensors across a Smart Campus, built using 
 ## Table of Contents
 
 - [API Overview](#api-overview)
-- [Technology Stack](#technology-stack)
-  [How to Build and Run](#how-to-build-and-run)
+- [How to Build and Run](#how-to-build-and-run)
 - [Sample curl Commands](#sample-curl-commands)
 - [Coursework Questions and Answers](#coursework-questions-and-answers)
 
@@ -35,17 +34,6 @@ The API follows REST principles with a versioned base path at `/api/v1`. All res
 
 ---
 
-## Technology Stack
-
-| Technology | Version |
-|------------|---------|
-| Java | 11 |
-| JAX-RS (Jersey) | 2.32 |
-| Apache Tomcat | 9 |
-| Jackson (JSON) | via jersey-media-json-jackson |
-| Build Tool | Maven |
-
----
 
 ## How to Build and Run
 
