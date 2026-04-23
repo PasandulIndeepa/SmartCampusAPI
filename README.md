@@ -33,7 +33,7 @@ The API follows REST principles with a versioned base path at `/api/v1`. All res
 - **Error Handling:** All errors return structured JSON bodies with an error message, HTTP status code, and a documentation link. Raw stack traces are never exposed.
 - **Logging:** Every request and response is logged via a JAX-RS filter without any logging code inside resource methods.
 
----
+
 
 ---
 
