@@ -151,7 +151,7 @@ curl -X POST http://localhost:8080/SmartCampusAPI/api/v1/sensors \
 
 Part 1 - Setup & Discovery
 
-Question 1.1.1 - JAX-RS Resource Lifecycle.
+Question 1.1 - JAX-RS Resource Lifecycle.
 
 JAX-RS will automatically generate a new instance of a resource class with each request. This implies that instance variables are re-created each request and can not contain shared data. This is the reason we have static HashMaps in DataStore - static fields are part of the class, not of the instance, hence the data is retained between all requests. In its absence, all data that is stored would be lost every time it is called.
 
